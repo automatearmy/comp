@@ -38,6 +38,8 @@ services:
       - '3005:3000'
     env_file:
       - apps/app/.env
+    environment:
+      HOSTNAME: "0.0.0.0"
     restart: unless-stopped
     healthcheck:
       test:
@@ -60,6 +62,8 @@ services:
       - '3002:3000'
     env_file:
       - apps/portal/.env
+    environment:
+      HOSTNAME: "0.0.0.0"
     restart: unless-stopped
     healthcheck:
       test:
