@@ -31,7 +31,7 @@ services:
       args:
         NEXT_PUBLIC_BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     ports:
-      - '3005:3000'
+      - '3000:3000'
     env_file:
       - apps/app/.env
     restart: unless-stopped
