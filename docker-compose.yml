@@ -13,6 +13,8 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     restart: "no"
     logging: *default-logging
   seeder:
@@ -22,6 +24,8 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     restart: "no"
     command: ["bun", "prisma/seed/seed.ts"]
     logging: *default-logging
@@ -34,6 +38,8 @@ services:
         NEXT_PUBLIC_BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     env_file:
       - apps/app/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:3000/api/health || exit 1']
@@ -51,6 +57,8 @@ services:
         NEXT_PUBLIC_BETTER_AUTH_URL: ${BETTER_AUTH_URL_PORTAL}
     env_file:
       - apps/portal/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:3000/ || exit 1']
