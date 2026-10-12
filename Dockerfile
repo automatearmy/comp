@@ -38,28 +38,28 @@ COPY apps/portal/package.json ./apps/portal/
 RUN PRISMA_SKIP_POSTINSTALL_GENERATE=true bun install --ignore-scripts
 
 # =============================================================================
-# STAGE 2: Ultra-Minimal Migrator - Only Prisma
+# STAGE 2: Migrator / Seeder - workspace Prisma (same versions as packages/db)
 # =============================================================================
-FROM bun-node AS migrator
+FROM deps AS migrator
 
 WORKDIR /app
 
-# Copy local Prisma schema and migrations from workspace
-COPY packages/db/prisma ./packages/db/prisma
+# Full db package: schema, migrations, seed script, prisma.config.ts
+COPY packages/db ./packages/db
 
-# Create minimal package.json for Prisma runtime (also used by seeder)
-RUN echo '{"name":"migrator","type":"module","dependencies":{"prisma":"^6.14.0","@prisma/client":"^6.14.0","@trycompai/db":"^1.3.4","zod":"^3.25.7"}}' > package.json
+# Generate the prisma-client-js client into node_modules/@prisma/client (needed by the seed script)
+RUN cd packages/db && node scripts/generate-prisma-client-js.js
 
-# Install ONLY Prisma dependencies
-RUN bun install
+# prisma.config.ts reads DATABASE_URL from the environment (env_file / Coolify)
+WORKDIR /app/packages/db
 
-# Ensure Prisma can find migrations relative to the published schema path
-# We copy the local migrations into the published package's dist directory
-RUN cp -R packages/db/prisma/migrations node_modules/@trycompai/db/dist/
+# Check the generated client and seed adapter without connecting to a database.
+RUN bun -e 'import { PrismaClient } from "@prisma/client"; \
+    import { PrismaPg } from "@prisma/adapter-pg"; \
+    const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: "postgresql://localhost:5432/build_check" }) }); \
+    await prisma.$disconnect();'
 
-# Run migrations against the combined schema published by @trycompai/db
-RUN echo "Running migrations against @trycompai/db combined schema"
-CMD ["bunx", "prisma", "migrate", "deploy", "--schema=node_modules/@trycompai/db/dist/schema.prisma"]
+CMD ["bunx", "prisma", "migrate", "deploy"]
 
 # =============================================================================
 # STAGE 3: App Builder

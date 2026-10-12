@@ -21,7 +21,7 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
-    command: sh -lc "bunx prisma generate --schema=node_modules/@trycompai/db/dist/schema.prisma && bun packages/db/prisma/seed/seed.js"
+    command: ["bun", "prisma/seed/seed.ts"]
     logging: *default-logging
   app:
     build:
