@@ -13,6 +13,7 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    restart: "no"
     logging: *default-logging
   seeder:
     build:
@@ -21,6 +22,7 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    restart: "no"
     command: ["bun", "prisma/seed/seed.ts"]
     logging: *default-logging
   app:
