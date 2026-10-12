@@ -6,6 +6,22 @@ x-logging: &default-logging
     compress: 'true'
 
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: comp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: postgres -c listen_addresses='*'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d comp']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *default-logging
   migrator:
     build:
       context: .
@@ -13,6 +29,11 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/comp
+    depends_on:
+      postgres:
+        condition: service_healthy
     logging: *default-logging
   seeder:
     build:
@@ -21,6 +42,11 @@ services:
       target: migrator
     env_file:
       - packages/db/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/comp
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: sh -lc "bunx prisma generate --schema=node_modules/@trycompai/db/dist/schema.prisma && bun packages/db/prisma/seed/seed.js"
     logging: *default-logging
   app:
@@ -34,6 +60,11 @@ services:
       - '3000:3000'
     env_file:
       - apps/app/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/comp
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:3000/api/health || exit 1']
@@ -53,6 +84,11 @@ services:
       - '3002:3000'
     env_file:
       - apps/portal/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/comp
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:3000/ || exit 1']
@@ -60,3 +96,6 @@ services:
       timeout: 10s
       retries: 3
     logging: *default-logging
+
+volumes:
+  postgres_data:
